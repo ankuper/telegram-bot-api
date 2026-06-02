@@ -124,6 +124,11 @@ struct ClientParameters {
   std::shared_ptr<SharedData> shared_data_;
 
   std::shared_ptr<td::NetQueryStats> net_query_stats_;
+
+  // TYPE3-PROXY: Type3/teleproto3 MTProto proxy injected into every bot's TDLib session.
+  td::string t3_proxy_host_;
+  td::int32 t3_proxy_port_ = 0;
+  td::string t3_proxy_secret_;  // raw binary bytes decoded from hex env T3_SECRET
 };
 
 }  // namespace telegram_bot_api

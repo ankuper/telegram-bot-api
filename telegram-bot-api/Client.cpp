@@ -6679,6 +6679,17 @@ class Client::TdOnInitCallback final : public TdQueryCallback {
     if (result->get_id() == td_api::error::ID) {
       LOG(WARNING) << "Failed to initialize due to " << td::oneline(to_string(result));
       client_->close();
+      return;
+    }
+    // TYPE3-PROXY: inject Type3/teleproto3 MTProto proxy into this bot's TDLib session.
+    // addProxy(enable=true) activates it immediately; no separate enableProxy call needed.
+    const auto &p = *client_->parameters_;
+    if (!p.t3_proxy_host_.empty() && p.t3_proxy_port_ > 0 && !p.t3_proxy_secret_.empty()) {
+      client_->send_request(
+          make_object<td_api::addProxy>(p.t3_proxy_host_, p.t3_proxy_port_, true,
+                                        make_object<td_api::proxyTypeMtproto>(p.t3_proxy_secret_)),
+          td::make_unique<TdOnOkCallback>());
+      LOG(INFO) << "TYPE3-PROXY: addProxy → " << p.t3_proxy_host_ << ":" << p.t3_proxy_port_;
     }
   }
 

@@ -204,6 +204,26 @@ int main(int argc, char *argv[]) {
     return td::string();
   }(std::getenv("TELEGRAM_API_HASH"));
 
+  // TYPE3-PROXY: read Type3/teleproto3 proxy settings from env.
+  // T3_SECRET is a hex string: 0xff + 16-byte AES key + UTF-8 domain.
+  [&] {
+    const char *host = std::getenv("T3_PROXY_HOST");
+    const char *port = std::getenv("T3_PROXY_PORT");
+    const char *secret_hex = std::getenv("T3_SECRET");
+    if (!host || !port || !secret_hex) {
+      return;
+    }
+    auto secret_bytes = td::hex_decode(td::Slice(secret_hex));
+    if (secret_bytes.is_error()) {
+      LOG(ERROR) << "TYPE3-PROXY: T3_SECRET is not valid hex: " << secret_bytes.error();
+      return;
+    }
+    parameters->t3_proxy_host_ = host;
+    parameters->t3_proxy_port_ = td::to_integer<td::int32>(td::Slice(port));
+    parameters->t3_proxy_secret_ = secret_bytes.move_as_ok();
+    LOG(WARNING) << "TYPE3-PROXY: configured " << host << ":" << port;
+  }();
+
   options.set_usage(td::Slice(argv[0]), "--api-id=<arg> --api-hash=<arg> [--local] [OPTION]...");
   options.set_description("Telegram Bot API server");
   options.add_option('h', "help", "display this help text and exit", [&] { need_print_usage = true; });
