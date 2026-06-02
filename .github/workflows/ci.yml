@@ -1,0 +1,41 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  identity-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Identity hygiene gate
+        env:
+          # provide the real-name denylist as a secret; never commit it
+          IDENTITY_DENYLIST: ${{ secrets.IDENTITY_DENYLIST }}
+        run: |
+          if [ -n "${IDENTITY_DENYLIST:-}" ]; then
+            printf '%s\n' "$IDENTITY_DENYLIST" > .identity-denylist
+          fi
+          sh ci/identity-audit.sh
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: |
+          sudo apt-get update && sudo apt-get install -y shellcheck
+          shellcheck entrypoint.sh ci/*.sh
+
+  build:
+    needs: [identity-audit, lint]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t telegram-bot-api-type3:ci .
+      # smoke runs only where a proxy endpoint + bot token are available (self-hosted runner)

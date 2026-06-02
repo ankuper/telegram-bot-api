@@ -3,3 +3,8 @@
 **/.DS_Store
 bin/
 vcpkg/
+# teleproto3-support additions
+.env
+*.local
+/teleproto3/
+.identity-denylist

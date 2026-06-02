@@ -1,0 +1,7 @@
+.git
+.github
+.env
+*.md
+ci
+docker-compose.yml
+.identity-denylist

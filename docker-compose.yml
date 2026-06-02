@@ -1,0 +1,19 @@
+services:
+  telegram-bot-api:
+    image: ghcr.io/ankuper/telegram-bot-api:latest
+    build: .
+    ports:
+      - "${BOT_API_PORT:-8081}:8081"
+    environment:
+      T3_PROXY_HOST: "${T3_PROXY_HOST}"
+      T3_PROXY_PORT: "${T3_PROXY_PORT}"
+      T3_SECRET: "${T3_SECRET}"
+      TELEGRAM_API_ID: "${TELEGRAM_API_ID:-}"
+      TELEGRAM_API_HASH: "${TELEGRAM_API_HASH:-}"
+      BOT_API_PORT: "${BOT_API_PORT:-8081}"
+    volumes:
+      - botapi-data:/var/lib/telegram-bot-api
+    restart: unless-stopped
+
+volumes:
+  botapi-data:
