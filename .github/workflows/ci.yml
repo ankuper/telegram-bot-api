@@ -1,9 +1,15 @@
 name: ci
+
 on:
   push:
-    branches: [main]
+    branches: [teleproto3-support]
   pull_request:
+    branches: [teleproto3-support]
   workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write   # needed for ghcr.io push
 
 jobs:
   identity-audit:
@@ -14,7 +20,6 @@ jobs:
           fetch-depth: 0
       - name: Identity hygiene gate
         env:
-          # provide the real-name denylist as a secret; never commit it
           IDENTITY_DENYLIST: ${{ secrets.IDENTITY_DENYLIST }}
         run: |
           if [ -n "${IDENTITY_DENYLIST:-}" ]; then
@@ -31,11 +36,42 @@ jobs:
           sudo apt-get update && sudo apt-get install -y shellcheck
           shellcheck entrypoint.sh ci/*.sh
 
-  build:
+  build-push:
     needs: [identity-audit, lint]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build image
-        run: docker build -t telegram-bot-api-type3:ci .
-      # smoke runs only where a proxy endpoint + bot token are available (self-hosted runner)
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata (tags + labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/ankuper/telegram-bot-api
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/teleproto3-support' }}
+            type=sha,prefix=,format=short
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.ref == 'refs/heads/teleproto3-support' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # GHA cache keeps TDLib build layers across runs — critical, build takes 30-60 min
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            TELEPROTO3_REF=main
+            TDLIB_REF=teleproto3-support
+            BOT_API_REF=master
