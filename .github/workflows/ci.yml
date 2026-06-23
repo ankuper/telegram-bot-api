@@ -72,6 +72,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            TELEPROTO3_REF=main
+            TELEPROTO3_REF=lib-v0.8.0
             TDLIB_REF=teleproto3-support
             BOT_API_REF=master

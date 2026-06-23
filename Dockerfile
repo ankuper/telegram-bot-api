@@ -3,7 +3,9 @@
 # Image: ghcr.io/ankuper/telegram-bot-api
 #
 # Build args let CI pin exact refs.
-ARG TELEPROTO3_REF=main
+# TELEPROTO3_REF = a teleproto3 RELEASE/TAG (policy: consume the prebuilt artifact,
+# never build teleproto3 from source). Pin to a tag, not a branch.
+ARG TELEPROTO3_REF=lib-v0.8.0
 ARG TDLIB_REF=teleproto3-support
 ARG BOT_API_REF=master
 
@@ -11,17 +13,20 @@ ARG BOT_API_REF=master
 FROM ubuntu:24.04 AS builder
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    cmake g++ make git zlib1g-dev libssl-dev gperf ca-certificates \
+    cmake g++ make git zlib1g-dev libssl-dev gperf ca-certificates curl \
     && rm -rf /var/lib/apt/lists/*
 
-# 1) libteleproto3 (Type3 client lib) — Option B: build from source, no release artifacts yet.
+# 1) libteleproto3 (Type3 client lib) — PREBUILT from the teleproto3 release/tag.
+#    Policy (docs/release-and-branch-policy.md): never build teleproto3 from source;
+#    consume the published per-platform artifact. Linux server → libteleproto3-linux-<arch>.tar.gz
+#    (archive layout: lib/{libteleproto3.a,include/}).
 ARG TELEPROTO3_REF
-RUN git clone --depth 1 --branch "${TELEPROTO3_REF}" \
-        https://github.com/ankuper/teleproto3.git /teleproto3 \
-    && cmake -S /teleproto3/lib -B /teleproto3/lib/build -DCMAKE_BUILD_TYPE=Release \
-    && cmake --build /teleproto3/lib/build -j"$(nproc)" \
-    && cp /teleproto3/lib/build/libteleproto3.a /usr/local/lib/libteleproto3.a \
-    && cp /teleproto3/lib/include/t3.h /usr/local/include/t3.h
+RUN ARCH="$(uname -m)" \
+    && curl -fsSL "https://github.com/ankuper/teleproto3/releases/download/${TELEPROTO3_REF}/libteleproto3-linux-${ARCH}.tar.gz" \
+        -o /tmp/libteleproto3.tar.gz \
+    && mkdir -p /teleproto3 && tar xzf /tmp/libteleproto3.tar.gz -C /teleproto3 \
+    && cp /teleproto3/lib/libteleproto3.a /usr/local/lib/libteleproto3.a \
+    && cp -r /teleproto3/lib/include/. /usr/local/include/
 
 # 2) telegram-bot-api with our Type3-patched TDLib swapped in for the td/ submodule.
 ARG BOT_API_REF
