@@ -1,3 +1,13 @@
+<!-- T3ChatM / ankuper fork -->
+
+> **Форк Telegram Bot API сервера с поддержкой Type3 (mtProxy3).** Анти-DPI транспорт — MTProto через обычный HTTPS, обход DPI/ТСПУ — через [libteleproto3](https://github.com/ankuper/teleproto3). Ниже — оригинальная документация.
+>
+> **Fork of the Telegram Bot API server with Type3 (mtProxy3) support** — anti-DPI transport via [libteleproto3](https://github.com/ankuper/teleproto3). Original docs below.
+>
+> **Поддержать инфраструктуру · Support (TON):** `UQAYS0k0PEky8BUE1Rij90v8-CmOWsuhAzdLTHOzYC-qZ0pV`
+
+---
+
 # Telegram Bot API
 
 The Telegram Bot API provides an HTTP API for creating [Telegram Bots](https://core.telegram.org/bots).
