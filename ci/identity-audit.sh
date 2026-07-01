@@ -39,4 +39,5 @@ else
   echo "WARN: no denylist file ($DENYFILE) — skipping content scan." >&2
 fi
 
+# shellcheck disable=SC2015
 [ "$fail" -eq 0 ] && echo "identity-audit: PASS" || { echo "identity-audit: FAIL" >&2; exit 1; }
